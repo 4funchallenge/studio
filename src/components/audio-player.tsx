@@ -12,7 +12,7 @@ const trackMap: { [key: string]: string } = {
   '/game': 'https://storage.googleapis.com/studiopanda-assets/game-music.mp3',
   '/wishes': 'https://storage.googleapis.com/studiopanda-assets/wishes-music.mp3',
   '/contact': 'https://storage.googleapis.com/studiopanda-assets/contact-music.mp3',
-  '/admin': 'https://storage.googleapis.com/studiopanda-assets/arcade-birthday.mp3', // Admin uses default
+  '/admin': 'https://storage.googleapis.com/studiopanda-assets/arcade-birthday.mp3',
 };
 
 
@@ -24,7 +24,7 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | null>(null);
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pathname = usePathname();
   

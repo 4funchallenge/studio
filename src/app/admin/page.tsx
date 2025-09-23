@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Shield, MessageSquare, Gift, Trash2, Music, Image as ImageIcon, FileAudio } from 'lucide-react';
+import { Shield, MessageSquare, Gift, Trash2, Music, Image as ImageIcon, FileAudio, Link as LinkIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -15,9 +15,9 @@ import { Textarea } from '@/components/ui/textarea';
 
 // Mock data - in a real app, this would come from a database
 const mockLevelMessages: LevelMessage[] = [
-  { message: "Wow, you're a natural at this!", imageUrl: 'https://picsum.photos/seed/1/200/200', audioUrl: '/music/level-complete-sfx.mp3' },
-  { message: "Incredible! On to the next one.", imageUrl: 'https://picsum.photos/seed/2/200/200', audioUrl: '/music/level-complete-sfx.mp3' },
-  { message: "You've got a great memory!", imageUrl: 'https://picsum.photos/seed/3/200/200', audioUrl: '/music/level-complete-sfx.mp3' },
+  { message: "Wow, you're a natural at this!", imageUrl: 'https://picsum.photos/seed/1/200/200', audioUrl: 'https://storage.googleapis.com/studiopanda-assets/level-complete.mp3' },
+  { message: "Incredible! On to the next one.", imageUrl: 'https://picsum.photos/seed/2/200/200', audioUrl: 'https://storage.googleapis.com/studiopanda-assets/level-complete.mp3' },
+  { message: "You've got a great memory!", imageUrl: 'https://picsum.photos/seed/3/200/200', audioUrl: 'https://storage.googleapis.com/studiopanda-assets/level-complete.mp3' },
 ];
 
 const mockContactMessages = [
@@ -52,16 +52,19 @@ function AdminDashboard() {
             description: `Message "${message}" would be added to the database.`,
         });
         messageInput.value = '';
-        // In a real app, you'd also handle the file uploads here
+        // In a real app, you'd also handle the file uploads/URL saves here
     }
   };
 
-  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>, audioType: string) => {
-    if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
+  const handleAudioUrlUpdate = (e: React.FormEvent<HTMLFormElement>, audioType: string) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const input = form.elements.namedItem(audioType) as HTMLInputElement;
+    const url = input.value;
+    if (url.trim()) {
         toast({
-            title: "Audio Uploaded (Simulated)",
-            description: `${audioType} updated with file: ${file.name}.`,
+            title: "Audio URL Updated (Simulated)",
+            description: `${audioType} updated with URL: ${url}.`,
         });
     }
   };
@@ -105,16 +108,16 @@ function AdminDashboard() {
                                 </div>
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <div className="space-y-2">
-                                        <Label htmlFor="level-image">Image</Label>
+                                        <Label htmlFor="level-image-url">Image URL</Label>
                                          <div className="relative">
-                                            <Input id="level-image" name="level-image" type="file" accept="image/*" className="pl-10" />
+                                            <Input id="level-image-url" name="level-image-url" type="text" placeholder="https://..." className="pl-10" />
                                             <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                          </div>
                                      </div>
                                       <div className="space-y-2">
-                                        <Label htmlFor="level-audio">Audio</Label>
+                                        <Label htmlFor="level-audio-url">Audio URL</Label>
                                           <div className="relative">
-                                            <Input id="level-audio" name="level-audio" type="file" accept="audio/*" className="pl-10" />
+                                            <Input id="level-audio-url" name="level-audio-url" type="text" placeholder="https://..." className="pl-10" />
                                             <FileAudio className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                           </div>
                                      </div>
@@ -191,47 +194,65 @@ function AdminDashboard() {
                    <TabsContent value="audio" className="mt-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><Music /> Audio Management</CardTitle>
+                                <CardTitle className="flex items-center gap-2"><Music /> Audio URL Management</CardTitle>
                                 <CardDescription>
-                                    Upload and manage background music and sound effects for the application.
+                                    Update the URLs for background music and sound effects.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="grid gap-4">
                                     <h3 className="text-lg font-medium">Background Music</h3>
                                     <div className="space-y-4">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="main-music">Main Page Music</Label>
-                                            <Input id="main-music" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Main Page Music')} />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="game-music">Game Page Music</Label>
-                                            <Input id="game-music" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Game Page Music')} />
-                                        </div>
-                                         <div className="grid gap-2">
-                                            <Label htmlFor="wishes-music">Wishes Page Music</Label>
-                                            <Input id="wishes-music" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Wishes Page Music')} />
-                                        </div>
-                                         <div className="grid gap-2">
-                                            <Label htmlFor="contact-music">Contact Page Music</Label>
-                                            <Input id="contact-music" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Contact Page Music')} />
-                                        </div>
+                                        <form onSubmit={(e) => handleAudioUrlUpdate(e, 'main-music-url')} className="grid gap-2">
+                                            <Label htmlFor="main-music-url">Main Page Music URL</Label>
+                                            <div className="flex gap-2">
+                                                <Input id="main-music-url" name="main-music-url" type="url" placeholder="https://example.com/music.mp3" />
+                                                <Button type="submit">Save</Button>
+                                            </div>
+                                        </form>
+                                        <form onSubmit={(e) => handleAudioUrlUpdate(e, 'game-music-url')} className="grid gap-2">
+                                            <Label htmlFor="game-music-url">Game Page Music URL</Label>
+                                            <div className="flex gap-2">
+                                                <Input id="game-music-url" name="game-music-url" type="url" placeholder="https://example.com/music.mp3" />
+                                                <Button type="submit">Save</Button>
+                                            </div>
+                                        </form>
+                                         <form onSubmit={(e) => handleAudioUrlUpdate(e, 'wishes-music-url')} className="grid gap-2">
+                                            <Label htmlFor="wishes-music-url">Wishes Page Music URL</Label>
+                                            <div className="flex gap-2">
+                                                <Input id="wishes-music-url" name="wishes-music-url" type="url" placeholder="https://example.com/music.mp3" />
+                                                <Button type="submit">Save</Button>
+                                            </div>
+                                        </form>
+                                         <form onSubmit={(e) => handleAudioUrlUpdate(e, 'contact-music-url')} className="grid gap-2">
+                                            <Label htmlFor="contact-music-url">Contact Page Music URL</Label>
+                                            <div className="flex gap-2">
+                                                <Input id="contact-music-url" name="contact-music-url" type="url" placeholder="https://example.com/music.mp3" />
+                                                <Button type="submit">Save</Button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                                 <div className="grid gap-4">
                                      <h3 className="text-lg font-medium">Sound Effects (SFX)</h3>
                                       <div className="space-y-4">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="card-flip-sfx">Card Flip SFX</Label>
-                                            <Input id="card-flip-sfx" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Card Flip SFX')} />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="level-complete-sfx">Level Complete SFX</Label>
-                                            <Input id="level-complete-sfx" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Level Complete SFX')} />
-                                        </div>
+                                        <form onSubmit={(e) => handleAudioUrlUpdate(e, 'card-flip-sfx-url')} className="grid gap-2">
+                                            <Label htmlFor="card-flip-sfx-url">Card Flip SFX URL</Label>
+                                            <div className="flex gap-2">
+                                                <Input id="card-flip-sfx-url" name="card-flip-sfx-url" type="url" placeholder="https://example.com/sfx.mp3" />
+                                                <Button type="submit">Save</Button>
+                                            </div>
+                                        </form>
+                                        <form onSubmit={(e) => handleAudioUrlUpdate(e, 'level-complete-sfx-url')} className="grid gap-2">
+                                            <Label htmlFor="level-complete-sfx-url">Level Complete SFX URL</Label>
+                                            <div className="flex gap-2">
+                                                <Input id="level-complete-sfx-url" name="level-complete-sfx-url" type="url" placeholder="https://example.com/sfx.mp3" />
+                                                <Button type="submit">Save</Button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-4">Full database integration is required to save and serve uploaded audio files.</p>
+                                <p className="text-xs text-muted-foreground mt-4">Full database integration is required to save and serve updated audio URLs.</p>
                             </CardContent>
                         </Card>
                     </TabsContent>
