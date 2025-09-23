@@ -10,6 +10,6 @@ export default function SubPageLayout({
     <>
       <HomeButton />
       {children}
-    </- >
+    </>
   );
 }
