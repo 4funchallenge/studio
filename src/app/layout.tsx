@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import { SiteHeader } from '@/components/site-header';
 
 export const metadata: Metadata = {
   title: "Afnan's Happy Birthday",
@@ -24,6 +25,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background font-ui antialiased">
         <div className="relative flex min-h-dvh flex-col">
+          <SiteHeader />
           <main className="flex-1">{children}</main>
         </div>
         <Toaster />
