@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GameCard } from './game-card';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -37,6 +37,21 @@ export function MemoryGame() {
   const [isChecking, setIsChecking] = useState(false);
   const [isLevelComplete, setIsLevelComplete] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const flipAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Initialize audio on the client side
+    if (!flipAudioRef.current) {
+      flipAudioRef.current = new Audio('/music/card-flip.mp3');
+    }
+  }, []);
+
+  const playFlipSound = () => {
+    if (flipAudioRef.current) {
+      flipAudioRef.current.currentTime = 0;
+      flipAudioRef.current.play().catch(error => console.error("Audio play failed:", error));
+    }
+  };
 
   const setupLevel = (currentLevel: number) => {
     const iconsForLevel = levelIcons[currentLevel - 1];
@@ -99,6 +114,7 @@ export function MemoryGame() {
     if (isChecking || cards[index].isFlipped || flippedIndices.length === 2) {
       return;
     }
+    playFlipSound();
     setCards(prev => prev.map((c, i) => (i === index ? { ...c, isFlipped: true } : c)));
     setFlippedIndices(prev => [...prev, index]);
   };

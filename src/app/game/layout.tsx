@@ -1,3 +1,4 @@
+import { AudioPlayer } from '@/components/audio-player';
 import { HomeButton } from '@/components/home-button';
 
 export default function SubPageLayout({
@@ -8,6 +9,7 @@ export default function SubPageLayout({
   return (
     <>
       <HomeButton />
+      <AudioPlayer />
       {children}
     </>
   );
