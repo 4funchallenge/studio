@@ -83,12 +83,20 @@ const personalizedLevelMessagesFlow = ai.defineFlow(
     outputSchema: PersonalizedMessageOutputSchema,
   },
   async input => {
+    // If there are no messages, return empty strings. The frontend will handle this.
+    if (input.levelMessages.length === 0) {
+      return {
+        message: '',
+        imageDataUri: '',
+        audioDataUri: '',
+      };
+    }
+    
     // Pick a random message from the provided level messages
     const selectedMessage = input.levelMessages[Math.floor(Math.random() * input.levelMessages.length)];
     
-    // For now, we are not using AI to generate image/audio, but this can be re-enabled.
-    // The image and audio will come from the selectedMessage object if provided.
-    // As a fallback, we generate a new image and audio if one isn't provided.
+    // Use the image and audio from the selectedMessage if provided.
+    // As a fallback, generate a new image and audio only if one isn't provided.
 
     let imageDataUri = selectedMessage.imageUrl ?? '';
     if (!imageDataUri) {

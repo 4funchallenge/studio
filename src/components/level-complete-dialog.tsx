@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -38,28 +39,36 @@ export const LevelCompleteDialog = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (isOpen && selectedMessage) {
-      const getMessage = async () => {
-        setIsLoading(true);
+    if (isOpen) {
+      if (selectedMessage) {
+        const getMessage = async () => {
+          setIsLoading(true);
+          setError(null);
+          setResult(null);
+          try {
+            // We pass the selected message to the AI flow.
+            // The flow will use the message's image/audio if available,
+            // or generate them if they are not.
+            const response = await generatePersonalizedMessage({
+              levelCompleted: level,
+              userMessages: [], // Not used
+              levelMessages: [selectedMessage], // Pass only the selected message
+            });
+            setResult(response);
+          } catch (e) {
+            console.error(e);
+            setError('Could not generate a special message. Please try again!');
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        getMessage();
+      } else {
+        // Handle the case where the message pool is depleted
+        setIsLoading(false);
         setError(null);
         setResult(null);
-        try {
-          // We now receive the selected message as a prop,
-          // so we only need to call the AI for the image and audio.
-          const response = await generatePersonalizedMessage({
-            levelCompleted: level,
-            userMessages: [], // Not used in the current flow
-            levelMessages: [selectedMessage], // Pass only the selected message
-          });
-          setResult(response);
-        } catch (e) {
-          console.error(e);
-          setError('Could not generate a special message. Please try again!');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      getMessage();
+      }
     }
   }, [isOpen, level, selectedMessage]);
 
@@ -96,7 +105,7 @@ export const LevelCompleteDialog = ({
             </div>
           )}
           {error && <p className="text-destructive">{error}</p>}
-          {result && (
+          {result && result.message && (
             <div className="flex flex-col items-center gap-4 text-center">
               {result.imageDataUri && (
                 <Image
