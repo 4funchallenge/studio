@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Gamepad2, Gift, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
-import { AudioPlayer } from '@/components/audio-player';
 
 const navLinks = [
   { href: '/game', label: 'Play Game', icon: Gamepad2 },
@@ -16,7 +15,7 @@ export default function Home() {
   const birthdayDate = new Date('2025-01-01T00:00:00');
 
   return (
-    <div className="container relative mx-auto flex h-[calc(100vh_-_4rem)] flex-col items-center justify-center text-center p-4">
+    <div className="container relative mx-auto flex h-screen flex-col items-center justify-center text-center p-4">
        <div 
         className="absolute inset-0 -z-10 h-full w-full bg-transparent"
         style={{

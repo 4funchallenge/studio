@@ -9,7 +9,7 @@ export default function SubPageLayout({
   return (
     <>
       <HomeButton />
-      <AudioPlayer />
+      <AudioPlayer src="/music/game-music.mp3" />
       {children}
     </>
   );

@@ -5,10 +5,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Shield, MessageSquare, Gift, Trash2, Eye } from 'lucide-react';
+import { Shield, MessageSquare, Gift, Trash2, Music } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
+import { AudioPlayer } from '@/components/audio-player';
 
 // Mock data - in a real app, this would come from a database
 const mockLevelMessages = [
@@ -27,12 +28,10 @@ const mockWishes = [
     { author: 'Visitor #2', message: 'Wishing you all the best on your special day!' },
 ];
 
-
 function AdminDashboard() {
   const { toast } = useToast();
 
   const handleDeleteWish = (index: number) => {
-    // This is a placeholder for actual deletion logic
     toast({
         title: "Wish Deleted (Simulated)",
         description: `Wish at index ${index} would be deleted in a real database.`,
@@ -54,101 +53,163 @@ function AdminDashboard() {
     }
   };
 
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>, audioType: string) => {
+    if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        toast({
+            title: "Audio Uploaded (Simulated)",
+            description: `${audioType} updated with file: ${file.name}.`,
+        });
+    }
+  };
+
 
   return (
-    <Card className="max-w-4xl mx-auto">
-        <CardHeader className="text-center">
-            <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit">
-                <Shield className="h-8 w-8 text-primary" />
-            </div>
-            <CardTitle className="font-headline text-3xl mt-4">Admin Dashboard</CardTitle>
-            <CardDescription>
-                Manage level messages, view contact submissions, and moderate wishes.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Tabs defaultValue="level-messages" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="level-messages">Level Messages</TabsTrigger>
-                    <TabsTrigger value="contact">Contact Messages</TabsTrigger>
-                    <TabsTrigger value="wishes">Moderate Wishes</TabsTrigger>
-                </TabsList>
+    <>
+      <AudioPlayer src="/music/arcade-birthday.mp3" />
+      <Card className="max-w-4xl mx-auto">
+          <CardHeader className="text-center">
+              <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit">
+                  <Shield className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle className="font-headline text-3xl mt-4">Admin Dashboard</CardTitle>
+              <CardDescription>
+                  Manage level messages, audio, and moderate content.
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Tabs defaultValue="level-messages" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="level-messages">Level Messages</TabsTrigger>
+                      <TabsTrigger value="contact">Contact Messages</TabsTrigger>
+                      <TabsTrigger value="wishes">Moderate Wishes</TabsTrigger>
+                      <TabsTrigger value="audio">Audio</TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="level-messages" className="mt-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Game Level Messages</CardTitle>
-                            <CardDescription>
-                                These messages can be used for level completion instead of AI-generated ones.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                           <form onSubmit={handleAddLevelMessage} className="flex gap-2 mb-4">
-                                <Input name="level-message" placeholder="Add a new level complete message..." />
-                                <Button type="submit">Add</Button>
-                           </form>
-                           <div className="space-y-2">
-                                {mockLevelMessages.map((msg, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted">
-                                        <p className="text-sm">{msg}</p>
-                                        <Button variant="ghost" size="icon" disabled>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                  <TabsContent value="level-messages" className="mt-6">
+                      <Card>
+                          <CardHeader>
+                              <CardTitle>Game Level Messages</CardTitle>
+                              <CardDescription>
+                                  These messages can be used for level completion instead of AI-generated ones.
+                              </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                             <form onSubmit={handleAddLevelMessage} className="flex gap-2 mb-4">
+                                  <Input name="level-message" placeholder="Add a new level complete message..." />
+                                  <Button type="submit">Add</Button>
+                             </form>
+                             <div className="space-y-2">
+                                  {mockLevelMessages.map((msg, i) => (
+                                      <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted">
+                                          <p className="text-sm">{msg}</p>
+                                          <Button variant="ghost" size="icon" disabled>
+                                              <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                      </div>
+                                  ))}
+                             </div>
+                             <p className="text-xs text-muted-foreground mt-4">Full database integration is required to manage messages.</p>
+                          </CardContent>
+                      </Card>
+                  </TabsContent>
+
+                  <TabsContent value="contact" className="mt-6">
+                      <Card>
+                           <CardHeader>
+                              <CardTitle>Contact Form Submissions</CardTitle>
+                              <CardDescription>
+                                  Messages sent via the "Get in Touch" page.
+                              </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                              {mockContactMessages.map((msg, i) => (
+                                  <div key={i} className="p-3 rounded-lg border bg-card">
+                                      <p className="font-semibold text-sm">{msg.name}</p>
+                                      <p className="text-sm text-muted-foreground">{msg.message}</p>
+                                  </div>
+                              ))}
+                              <p className="text-xs text-muted-foreground mt-4">Full database integration is required to view and manage submissions.</p>
+                          </CardContent>
+                      </Card>
+                  </TabsContent>
+
+                  <TabsContent value="wishes" className="mt-6">
+                       <Card>
+                           <CardHeader>
+                              <CardTitle>Moderate Birthday Wishes</CardTitle>
+                              <CardDescription>
+                                  Review and remove any inappropriate wishes from the public wishes board.
+                              </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                              {mockWishes.map((wish, i) => (
+                                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted">
+                                      <div className="flex-1">
+                                        <p className="text-sm font-bold">{wish.author}</p>
+                                        <p className="text-sm text-muted-foreground">{wish.message}</p>
+                                      </div>
+                                      <Button variant="ghost" size="icon" onClick={() => handleDeleteWish(i)}>
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                  </div>
+                              ))}
+                               <p className="text-xs text-muted-foreground mt-4">Full database integration is required to moderate wishes.</p>
+                          </CardContent>
+                      </Card>
+                  </TabsContent>
+
+                   <TabsContent value="audio" className="mt-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Music /> Audio Management</CardTitle>
+                                <CardDescription>
+                                    Upload and manage background music and sound effects for the application.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="grid gap-4">
+                                    <h3 className="text-lg font-medium">Background Music</h3>
+                                    <div className="space-y-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="main-music">Main Page Music</Label>
+                                            <Input id="main-music" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Main Page Music')} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="game-music">Game Page Music</Label>
+                                            <Input id="game-music" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Game Page Music')} />
+                                        </div>
+                                         <div className="grid gap-2">
+                                            <Label htmlFor="wishes-music">Wishes Page Music</Label>
+                                            <Input id="wishes-music" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Wishes Page Music')} />
+                                        </div>
+                                         <div className="grid gap-2">
+                                            <Label htmlFor="contact-music">Contact Page Music</Label>
+                                            <Input id="contact-music" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Contact Page Music')} />
+                                        </div>
                                     </div>
-                                ))}
-                           </div>
-                           <p className="text-xs text-muted-foreground mt-4">Full database integration is required to manage messages.</p>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="contact" className="mt-6">
-                    <Card>
-                         <CardHeader>
-                            <CardTitle>Contact Form Submissions</CardTitle>
-                            <CardDescription>
-                                Messages sent via the "Get in Touch" page.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {mockContactMessages.map((msg, i) => (
-                                <div key={i} className="p-3 rounded-lg border bg-card">
-                                    <p className="font-semibold text-sm">{msg.name}</p>
-                                    <p className="text-sm text-muted-foreground">{msg.message}</p>
                                 </div>
-                            ))}
-                            <p className="text-xs text-muted-foreground mt-4">Full database integration is required to view and manage submissions.</p>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="wishes" className="mt-6">
-                     <Card>
-                         <CardHeader>
-                            <CardTitle>Moderate Birthday Wishes</CardTitle>
-                            <CardDescription>
-                                Review and remove any inappropriate wishes from the public wishes board.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            {mockWishes.map((wish, i) => (
-                                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted">
-                                    <div className="flex-1">
-                                      <p className="text-sm font-bold">{wish.author}</p>
-                                      <p className="text-sm text-muted-foreground">{wish.message}</p>
+                                <div className="grid gap-4">
+                                     <h3 className="text-lg font-medium">Sound Effects (SFX)</h3>
+                                      <div className="space-y-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="card-flip-sfx">Card Flip SFX</Label>
+                                            <Input id="card-flip-sfx" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Card Flip SFX')} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="level-complete-sfx">Level Complete SFX</Label>
+                                            <Input id="level-complete-sfx" type="file" accept="audio/*" onChange={(e) => handleAudioUpload(e, 'Level Complete SFX')} />
+                                        </div>
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteWish(i)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
                                 </div>
-                            ))}
-                             <p className="text-xs text-muted-foreground mt-4">Full database integration is required to moderate wishes.</p>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </CardContent>
-    </Card>
+                                <p className="text-xs text-muted-foreground mt-4">Full database integration is required to save and serve uploaded audio files.</p>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+              </Tabs>
+          </CardContent>
+      </Card>
+    </>
   );
 }
 

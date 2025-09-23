@@ -9,7 +9,7 @@ export default function SubPageLayout({
   return (
     <>
       <HomeButton />
-      <AudioPlayer />
+      {/* The admin page has its own complex layout, so we don't include the default player */}
       {children}
     </>
   );

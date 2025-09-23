@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import { AudioPlayer } from '@/components/audio-player';
 
 export const metadata: Metadata = {
   title: "Afnan's Happy Birthday",
@@ -23,6 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-background font-ui antialiased">
+        <AudioPlayer src="/music/arcade-birthday.mp3" />
         <div className="relative flex min-h-dvh flex-col">
           <main className="flex-1">{children}</main>
         </div>
