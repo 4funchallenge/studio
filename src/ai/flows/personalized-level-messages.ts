@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -13,8 +14,8 @@ import {z} from 'genkit';
 
 const PersonalizedMessageInputSchema = z.object({
   levelCompleted: z.number().describe('The level number that was completed.'),
-  userMessages: z.array(z.string()).describe('Array of user messages.'),
-  levelMessages: z.array(z.string()).describe('Array of level completion messages.'),
+  userMessages: z.array(z.string()).describe('Array of user messages from a database.'),
+  levelMessages: z.array(z.string()).describe('Array of level completion messages from a database.'),
 });
 export type PersonalizedMessageInput = z.infer<typeof PersonalizedMessageInputSchema>;
 
@@ -38,8 +39,22 @@ export async function generatePersonalizedMessage(
 const prompt = ai.definePrompt({
   name: 'personalizedLevelMessagesPrompt',
   input: {schema: PersonalizedMessageInputSchema},
-  output: {schema: PersonalizedMessageOutputSchema},
-  prompt: `You are an AI assistant that generates personalized level completion messages for a birthday-themed arcade game.\n\n  The player has just completed level {{{levelCompleted}}}.\n  Here are some user messages: {{{userMessages}}}.\n  Here are some generic level completion messages: {{{levelMessages}}}.\n\n  Create a single personalized level completion message that incorporates elements from the user messages and the generic level completion messages. The message should be short and encouraging.\n  Also generate a description of an image that would be appropriate for the message and the game.\n  Also generate a short text prompt for an audio clip that would be appropriate for the message and the game.  The audio clip should be short, upbeat, and celebratory.\n\n  Make sure that the imageDataUri and audioDataUri are not empty.\n  Return the personalized message, an image data URI, and an audio data URI. The image and audio should be relevant to the level and messages.\n  For multi-speaker TTS scenario, make sure that the speakers are Speaker1 for messages and sounds that a kid would make, and Speaker2 for messages and sounds that an adult would make.\n  Speaker1 should have a high pitched voice and Speaker2 should have a lower pitched voice.\n  The overall tone should be celebratory.\n  \n  Format the output as a JSON object.
+  output: {schema: z.object({ message: z.string() })},
+  prompt: `You are an AI assistant that generates personalized level completion messages for a birthday-themed arcade game.
+
+  The player has just completed level {{{levelCompleted}}}.
+
+  Here are some user messages from a database which might contain birthday wishes or other comments:
+  {{{userMessages}}}
+
+  Here is a list of approved, generic level completion messages from a database:
+  {{{levelMessages}}}
+
+  Your task is to choose ONE message from the 'levelMessages' list that fits the occasion.
+  Then, you can optionally personalize it slightly by creatively incorporating a theme or a name from the 'userMessages' list.
+  Keep the message short, encouraging, and celebratory.
+  
+  Return only the final, single message.
 `,
 });
 
@@ -79,11 +94,22 @@ const personalizedLevelMessagesFlow = ai.defineFlow(
     outputSchema: PersonalizedMessageOutputSchema,
   },
   async input => {
-    const promptResult = await prompt(input);
-    const {message} = promptResult.output!;
+    // Determine whether to use AI or a pre-defined message.
+    // For this example, we'll randomly decide. In a real app, this could be a setting in the admin dashboard.
+    const useAiForMessage = Math.random() > 0.5;
+    let message: string;
+
+    if (useAiForMessage) {
+        const promptResult = await prompt(input);
+        message = promptResult.output!.message;
+    } else {
+        // Pick a random message from the provided level messages
+        message = input.levelMessages[Math.floor(Math.random() * input.levelMessages.length)];
+    }
+
 
     // Generate the image
-    const imageDescription = `Generate an image relevant to this message and game: ${message}`;
+    const imageDescription = `Generate a fun, vibrant, arcade-style image celebrating the completion of a game level. The theme is a birthday party. The image should be celebratory and family-friendly.`;
     const imageResult = await ai.generate({
       model: 'googleai/imagen-4.0-fast-generate-001',
       prompt: imageDescription,
@@ -127,9 +153,11 @@ const personalizedLevelMessagesFlow = ai.defineFlow(
     }
 
     return {
-      message: promptResult.output!.message,
+      message: message,
       imageDataUri: imageResult.media!.url,
       audioDataUri: audioDataUri,
     };
   }
 );
+
+    
