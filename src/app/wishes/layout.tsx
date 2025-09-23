@@ -7,6 +7,7 @@ export default function SubPageLayout({
   }>) {
     return (
         <>
+            <SiteHeader />
             {children}
         </>
     );
