@@ -24,37 +24,41 @@ export function AudioProvider({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pathname = usePathname();
 
+  // Initialize Audio on the client side.
   useEffect(() => {
-    // Initialize Audio on the client side.
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.loop = true;
     }
   }, []);
 
+  // Effect to manage the audio source and play state
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Use currentTrack if set, otherwise fallback to defaultSrc, especially for the homepage.
-    // pathname check ensures default is used on the home page when navigating back.
-    const trackToPlay = (pathname !== '/' && currentTrack) ? currentTrack : defaultSrc;
-    
-    // Check if we need to change the source
-    const currentSrc = audio.src ? new URL(audio.src).pathname : '';
-    const newSrc = new URL(trackToPlay, window.location.origin).pathname;
+    // Determine the correct track to play.
+    // On the homepage ('/'), always use the default.
+    // On other pages, use the track set by PageSpecificAudio.
+    const trackToPlay = pathname === '/' ? defaultSrc : currentTrack;
 
-    if (currentSrc !== newSrc) {
-      const wasPlaying = !audio.paused;
-      audio.src = trackToPlay;
-      if (wasPlaying || isPlaying) {
-        audio.play().catch(error => console.error("Audio play failed on src change:", error));
+    if (trackToPlay) {
+      // Check if the source needs to be changed
+      const currentSrc = audio.src ? new URL(audio.src).pathname : '';
+      const newSrc = new URL(trackToPlay, window.location.origin).pathname;
+
+      if (currentSrc !== newSrc) {
+        audio.src = trackToPlay;
+        // If it was playing before the source change, play the new track.
+        if (isPlaying) {
+          audio.play().catch(error => console.error("Audio play failed on src change:", error));
+        }
       }
     }
-    
-    // Handle play/pause state
-    if (isPlaying && audio.paused) {
-      audio.play().catch(e => console.error("Audio play failed:", e));
+
+    // Handle manual play/pause toggle
+    if (isPlaying && audio.paused && audio.src) {
+      audio.play().catch(e => console.error("Audio play failed on toggle:", e));
     } else if (!isPlaying && !audio.paused) {
       audio.pause();
     }
@@ -66,8 +70,6 @@ export function AudioProvider({
   
   const contextValue = useMemo(() => ({
     setTrack: (src: string | null) => {
-      // When a track is set, update the state.
-      // If src is null, it means we should revert to the page's default.
       setCurrentTrack(src);
     }
   }), []);
@@ -92,7 +94,7 @@ export function useAudio() {
     return context;
 }
 
-// This component now just sets the track for its page context
+// This component's only job is to tell the provider which track to play.
 export function PageSpecificAudio({ src }: { src: string | null }) {
     const { setTrack } = useAudio();
 
@@ -100,12 +102,11 @@ export function PageSpecificAudio({ src }: { src: string | null }) {
         // On mount, set the track for this page
         setTrack(src);
 
-        // On unmount (page change), reset the track to null.
-        // The provider will then fall back to the default track if on the home page.
+        // On unmount (when navigating away), tell the provider to fall back to default.
         return () => {
             setTrack(null);
         }
     }, [src, setTrack]);
 
-    return null; // This component does not render anything
+    return null; // This component does not render anything.
 }
