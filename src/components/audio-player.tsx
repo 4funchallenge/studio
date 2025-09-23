@@ -34,8 +34,13 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       const audio = new Audio();
       audio.loop = true;
       audioRef.current = audio;
+      
+      // Try to play when audio is first initialized
+      if (isPlaying) {
+        audio.play().catch(e => console.error("Audio play failed on init:", e));
+      }
     }
-  }, []);
+  }, [isPlaying]);
 
   // Effect to decide which track to play based on the current path
   useEffect(() => {
@@ -49,7 +54,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     if (audio.src !== trackForPath) {
       audio.src = trackForPath;
       if (isPlaying) {
-         audio.play().catch(e => console.error("Audio play failed:", e));
+         audio.play().catch(e => console.error("Audio play failed on path change:", e));
       }
     }
     
@@ -61,7 +66,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     if (!audio) return;
 
     if (isPlaying && audio.paused) {
-      audio.play().catch(e => console.error("Audio play failed:", e));
+      audio.play().catch(e => console.error("Audio play failed on state change:", e));
     } else if (!isPlaying && !audio.paused) {
       audio.pause();
     }
@@ -77,7 +82,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div className="fixed top-4 right-4 z-50">
         <Button variant="outline" size="icon" onClick={togglePlayPause} aria-label="Toggle music">
-          {isPlaying ? <VolumeX className="h-5 w-5" /> : <Music4 className="h-5 w-5" />}
+          {isPlaying ? <Music4 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
         </Button>
       </div>
     </AudioContext.Provider>
