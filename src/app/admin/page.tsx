@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -110,16 +109,18 @@ function AdminDashboard() {
                                      <div className="space-y-2">
                                         <Label htmlFor="level-image-url">Image URL</Label>
                                          <div className="relative">
-                                            <Input id="level-image-url" name="level-image-url" type="text" placeholder="https://..." className="pl-10" />
+                                            <Input id="level-image-url" name="level-image-url" type="text" placeholder="Paste image URL here..." className="pl-10" />
                                             <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                          </div>
+                                         <p className="text-xs text-muted-foreground">Upload an image to a hosting service (e.g., Imgur) and paste the URL here.</p>
                                      </div>
                                       <div className="space-y-2">
                                         <Label htmlFor="level-audio-url">Audio URL</Label>
                                           <div className="relative">
-                                            <Input id="level-audio-url" name="level-audio-url" type="text" placeholder="https://..." className="pl-10" />
+                                            <Input id="level-audio-url" name="level-audio-url" type="text" placeholder="Paste audio URL here..." className="pl-10" />
                                             <FileAudio className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                           </div>
+                                          <p className="text-xs text-muted-foreground">Upload audio to a hosting service and paste the URL here.</p>
                                      </div>
                                  </div>
                                   <Button type="submit">Add Message</Button>
@@ -321,3 +322,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
