@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, createContext, useContext, useMemo } from 'react';
@@ -25,19 +26,22 @@ export function AudioProvider({
   useEffect(() => {
     // Initialize Audio on the client side.
     if (!audioRef.current) {
-      audioRef.current = new Audio(defaultSrc);
+      audioRef.current = new Audio();
       audioRef.current.loop = true;
     }
-  }, [defaultSrc]);
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (currentTrack && audio.src !== new URL(currentTrack, window.location.origin).toString()) {
+    const trackToPlay = currentTrack || defaultSrc;
+
+    if (audio.src !== new URL(trackToPlay, window.location.origin).toString()) {
         const wasPlaying = !audio.paused;
-        audio.src = currentTrack;
-        if(wasPlaying) {
+        audio.src = trackToPlay;
+        // If it was playing, or the user wants it to play, play it.
+        if (wasPlaying || isPlaying) {
             audio.play().catch(error => console.error("Audio play failed on src change:", error));
         }
     }
@@ -47,7 +51,7 @@ export function AudioProvider({
     } else if (!isPlaying && !audio.paused) {
         audio.pause();
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, defaultSrc]);
 
   const togglePlayPause = () => {
     setIsPlaying(prev => !prev);
@@ -55,10 +59,9 @@ export function AudioProvider({
   
   const contextValue = useMemo(() => ({
     setTrack: (src: string | null) => {
-      // If null, revert to default. If a new track, set it.
-      setCurrentTrack(src || defaultSrc);
+      setCurrentTrack(src);
     }
-  }), [defaultSrc]);
+  }), []);
 
   return (
     <AudioContext.Provider value={contextValue}>
@@ -95,9 +98,10 @@ export function PageSpecificAudio({ src }: { src: string | null }) {
         // When component unmounts (page changes), revert to default
         return () => {
             // A small timeout helps prevent race conditions between pages
+            // This is a pragmatic fix for the fast-refresh environment
             setTimeout(() => {
                 setTrack(null);
-            }, 10);
+            }, 50);
         }
     }, [src, setTrack, pathname]);
 
