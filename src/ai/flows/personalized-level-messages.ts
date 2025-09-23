@@ -11,11 +11,23 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import wav from 'wav';
+
+// Define the shape of a single level message object
+export const LevelMessageSchema = z.object({
+  message: z.string(),
+  imageUrl: z.string().optional(),
+  audioUrl: z.string().optional(),
+});
+export type LevelMessage = z.infer<typeof LevelMessageSchema>;
+
 
 const PersonalizedMessageInputSchema = z.object({
   levelCompleted: z.number().describe('The level number that was completed.'),
+  // The user messages are kept for potential future use, but are not used in this flow.
   userMessages: z.array(z.string()).describe('Array of user messages from a database.'),
-  levelMessages: z.array(z.string()).describe('Array of level completion messages from a database.'),
+  // This is now an array of LevelMessage objects
+  levelMessages: z.array(LevelMessageSchema).describe('Array of level completion message objects from a database.'),
 });
 export type PersonalizedMessageInput = z.infer<typeof PersonalizedMessageInputSchema>;
 
@@ -36,29 +48,6 @@ export async function generatePersonalizedMessage(
   return personalizedLevelMessagesFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'personalizedLevelMessagesPrompt',
-  input: {schema: PersonalizedMessageInputSchema},
-  output: {schema: z.object({ message: z.string() })},
-  prompt: `You are an AI assistant that generates personalized level completion messages for a birthday-themed arcade game.
-
-  The player has just completed level {{{levelCompleted}}}.
-
-  Here are some user messages from a database which might contain birthday wishes or other comments:
-  {{{userMessages}}}
-
-  Here is a list of approved, generic level completion messages from a database:
-  {{{levelMessages}}}
-
-  Your task is to choose ONE message from the 'levelMessages' list that fits the occasion.
-  Then, you can optionally personalize it slightly by creatively incorporating a theme or a name from the 'userMessages' list.
-  Keep the message short, encouraging, and celebratory.
-  
-  Return only the final, single message.
-`,
-});
-
-import wav from 'wav';
 
 async function toWav(
   pcmData: Buffer,
@@ -94,70 +83,66 @@ const personalizedLevelMessagesFlow = ai.defineFlow(
     outputSchema: PersonalizedMessageOutputSchema,
   },
   async input => {
-    // Determine whether to use AI or a pre-defined message.
-    // For this example, we'll randomly decide. In a real app, this could be a setting in the admin dashboard.
-    const useAiForMessage = Math.random() > 0.5;
-    let message: string;
+    // Pick a random message from the provided level messages
+    const selectedMessage = input.levelMessages[Math.floor(Math.random() * input.levelMessages.length)];
+    
+    // For now, we are not using AI to generate image/audio, but this can be re-enabled.
+    // The image and audio will come from the selectedMessage object if provided.
+    // As a fallback, we generate a new image and audio if one isn't provided.
 
-    if (useAiForMessage) {
-        const promptResult = await prompt(input);
-        message = promptResult.output!.message;
-    } else {
-        // Pick a random message from the provided level messages
-        message = input.levelMessages[Math.floor(Math.random() * input.levelMessages.length)];
+    let imageDataUri = selectedMessage.imageUrl ?? '';
+    if (!imageDataUri) {
+        const imageDescription = `Generate a fun, vibrant, arcade-style image celebrating the completion of a game level. The theme is a birthday party. The image should be celebratory and family-friendly.`;
+        const imageResult = await ai.generate({
+          model: 'googleai/imagen-4.0-fast-generate-001',
+          prompt: imageDescription,
+        });
+        imageDataUri = imageResult.media?.url ?? '';
     }
 
-
-    // Generate the image
-    const imageDescription = `Generate a fun, vibrant, arcade-style image celebrating the completion of a game level. The theme is a birthday party. The image should be celebratory and family-friendly.`;
-    const imageResult = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
-      prompt: imageDescription,
-    });
-
-    // Generate the audio
-    const audioPrompt = `Speaker1: Woo-hoo! Speaker2: Great job! Let's go to the next level!`;
-    const audioResult = await ai.generate({
-      model: ai.model('gemini-2.5-flash-preview-tts'),
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          multiSpeakerVoiceConfig: {
-            speakerVoiceConfigs: [
-              {
-                speaker: 'Speaker1',
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: 'Algenib' },
-                },
+    let audioDataUri = selectedMessage.audioUrl ?? '';
+    if (!audioDataUri) {
+        const audioPrompt = `Speaker1: Woo-hoo! Speaker2: Great job! Let's go to the next level!`;
+        const audioResult = await ai.generate({
+          model: ai.model('gemini-2.5-flash-preview-tts'),
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              multiSpeakerVoiceConfig: {
+                speakerVoiceConfigs: [
+                  {
+                    speaker: 'Speaker1',
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: 'Algenib' },
+                    },
+                  },
+                  {
+                    speaker: 'Speaker2',
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: 'Achernar' },
+                    },
+                  },
+                ],
               },
-              {
-                speaker: 'Speaker2',
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: 'Achernar' },
-                },
-              },
-            ],
+            },
           },
-        },
-      },
-      prompt: audioPrompt,
-    });
+          prompt: audioPrompt,
+        });
 
-    let audioDataUri = "";
-    if (audioResult.media) {
-        const audioBuffer = Buffer.from(
-            audioResult.media.url.substring(audioResult.media.url.indexOf(',') + 1),
-            'base64'
-          );
-        audioDataUri = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
+        if (audioResult.media) {
+            const audioBuffer = Buffer.from(
+                audioResult.media.url.substring(audioResult.media.url.indexOf(',') + 1),
+                'base64'
+              );
+            audioDataUri = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
+        }
     }
+
 
     return {
-      message: message,
-      imageDataUri: imageResult.media!.url,
+      message: selectedMessage.message,
+      imageDataUri: imageDataUri,
       audioDataUri: audioDataUri,
     };
   }
 );
-
-    

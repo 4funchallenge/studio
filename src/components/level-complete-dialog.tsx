@@ -14,8 +14,9 @@ import { Loader2, Sparkles } from 'lucide-react';
 import {
   generatePersonalizedMessage,
   type PersonalizedMessageOutput,
+  type LevelMessage,
 } from '@/ai/flows/personalized-level-messages';
-import { userMessages, levelMessages } from '@/lib/mock-data';
+import { userMessages, levelMessages as mockLevelMessages } from '@/lib/mock-data';
 
 interface LevelCompleteDialogProps {
   level: number;
@@ -42,10 +43,18 @@ export const LevelCompleteDialog = ({
         setError(null);
         setResult(null);
         try {
+          // The structure of mock data has changed, so we adapt it here.
+          // In a real app, this data would come from a DB in the correct format.
+          const formattedLevelMessages: LevelMessage[] = mockLevelMessages.map(msg => ({
+            message: msg.message,
+            imageUrl: msg.imageUrl,
+            audioUrl: msg.audioUrl,
+          }));
+
           const response = await generatePersonalizedMessage({
             levelCompleted: level,
             userMessages: userMessages,
-            levelMessages: levelMessages,
+            levelMessages: formattedLevelMessages,
           });
           setResult(response);
         } catch (e) {

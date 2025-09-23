@@ -5,17 +5,19 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Shield, MessageSquare, Gift, Trash2, Music } from 'lucide-react';
+import { Shield, MessageSquare, Gift, Trash2, Music, Image as ImageIcon, FileAudio } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { AudioPlayer } from '@/components/audio-player';
+import type { LevelMessage } from '@/ai/flows/personalized-level-messages';
+import { Textarea } from '@/components/ui/textarea';
 
 // Mock data - in a real app, this would come from a database
-const mockLevelMessages = [
-  "Wow, you're a natural at this!",
-  "Incredible! On to the next one.",
-  "You've got a great memory!",
+const mockLevelMessages: LevelMessage[] = [
+  { message: "Wow, you're a natural at this!", imageUrl: 'https://picsum.photos/seed/1/200/200', audioUrl: '/music/level-complete-sfx.mp3' },
+  { message: "Incredible! On to the next one.", imageUrl: 'https://picsum.photos/seed/2/200/200', audioUrl: '/music/level-complete-sfx.mp3' },
+  { message: "You've got a great memory!", imageUrl: 'https://picsum.photos/seed/3/200/200', audioUrl: '/music/level-complete-sfx.mp3' },
 ];
 
 const mockContactMessages = [
@@ -41,15 +43,16 @@ function AdminDashboard() {
   const handleAddLevelMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
-    const input = form.elements.namedItem('level-message') as HTMLInputElement;
-    const message = input.value;
+    const messageInput = form.elements.namedItem('level-message') as HTMLInputElement;
+    const message = messageInput.value;
     
     if (message.trim()) {
         toast({
             title: "Level Message Added (Simulated)",
             description: `Message "${message}" would be added to the database.`,
         });
-        input.value = '';
+        messageInput.value = '';
+        // In a real app, you'd also handle the file uploads here
     }
   };
 
@@ -89,20 +92,47 @@ function AdminDashboard() {
                   <TabsContent value="level-messages" className="mt-6">
                       <Card>
                           <CardHeader>
-                              <CardTitle>Game Level Messages</CardTitle>
+                              <CardTitle>Game Level Completion Messages</CardTitle>
                               <CardDescription>
-                                  These messages can be used for level completion instead of AI-generated ones.
+                                 Manage the messages, images, and sounds that appear when a player completes a level.
                               </CardDescription>
                           </CardHeader>
                           <CardContent>
-                             <form onSubmit={handleAddLevelMessage} className="flex gap-2 mb-4">
-                                  <Input name="level-message" placeholder="Add a new level complete message..." />
-                                  <Button type="submit">Add</Button>
+                             <form onSubmit={handleAddLevelMessage} className="space-y-4 p-4 border rounded-lg mb-6">
+                                <h3 className="font-medium text-lg">Add New Level Message</h3>
+                                <div className="space-y-2">
+                                  <Label htmlFor="level-message">Message</Label>
+                                  <Textarea id="level-message" name="level-message" placeholder="Add a new level complete message..." />
+                                </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="level-image">Image</Label>
+                                         <div className="relative">
+                                            <Input id="level-image" name="level-image" type="file" accept="image/*" className="pl-10" />
+                                            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                         </div>
+                                     </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="level-audio">Audio</Label>
+                                          <div className="relative">
+                                            <Input id="level-audio" name="level-audio" type="file" accept="audio/*" className="pl-10" />
+                                            <FileAudio className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                          </div>
+                                     </div>
+                                 </div>
+                                  <Button type="submit">Add Message</Button>
                              </form>
-                             <div className="space-y-2">
+                             <div className="space-y-4">
+                                  <h3 className="font-medium text-lg">Existing Messages</h3>
                                   {mockLevelMessages.map((msg, i) => (
-                                      <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted">
-                                          <p className="text-sm">{msg}</p>
+                                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                                          <div className="flex-1">
+                                            <p className="text-sm font-semibold">{msg.message}</p>
+                                            <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
+                                                <span>Image: {msg.imageUrl ? 'Yes' : 'No'}</span>
+                                                <span>Audio: {msg.audioUrl ? 'Yes' : 'No'}</span>
+                                            </div>
+                                          </div>
                                           <Button variant="ghost" size="icon" disabled>
                                               <Trash2 className="h-4 w-4" />
                                           </Button>
