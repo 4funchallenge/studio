@@ -29,15 +29,15 @@ export function AudioPlayer() {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50">
+    <>
       <audio ref={audioRef} src="/music/arcade-birthday.mp3" loop />
-      <Button variant="ghost" size="icon" onClick={togglePlayPause} aria-label="Toggle music">
+      <Button variant="outline" size="icon" onClick={togglePlayPause} aria-label="Toggle music">
         {isPlaying ? (
           <VolumeX className="h-5 w-5" />
         ) : (
           <Music4 className="h-5 w-5" />
         )}
       </Button>
-    </div>
+    </>
   );
 }
