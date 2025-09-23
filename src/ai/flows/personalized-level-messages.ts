@@ -14,7 +14,7 @@ import {z} from 'genkit';
 import wav from 'wav';
 
 // Define the shape of a single level message object
-export const LevelMessageSchema = z.object({
+const LevelMessageSchema = z.object({
   message: z.string(),
   imageUrl: z.string().optional(),
   audioUrl: z.string().optional(),
