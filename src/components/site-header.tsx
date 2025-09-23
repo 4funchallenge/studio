@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { MainNav } from './main-nav';
 import { AudioPlayer } from './audio-player';
 import { CakeSlice } from 'lucide-react';
 
@@ -14,7 +13,6 @@ export function SiteHeader() {
           </span>
         </Link>
         <div className="flex flex-1 items-center justify-end space-x-4">
-            <MainNav />
             <AudioPlayer />
         </div>
       </div>

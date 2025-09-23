@@ -98,7 +98,7 @@ export default function WishesPage() {
                         </Avatar>
                         <div className="flex-1">
                           <p className="font-semibold">{wish.author}</p>
-                          <p className="text-sm text-foreground/80">{wish.message}</p>
+                          <p className="text-sm text-foreground/80 font-handwritten">{wish.message}</p>
                         </div>
                       </CardHeader>
                       <CardFooter className="p-4 pt-0">
