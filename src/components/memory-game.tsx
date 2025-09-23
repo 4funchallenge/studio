@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -42,7 +43,7 @@ export function MemoryGame() {
   useEffect(() => {
     // Initialize audio on the client side
     if (!flipAudioRef.current) {
-      flipAudioRef.current = new Audio('/music/card-flip.mp3');
+      flipAudioRef.current = new Audio('https://storage.googleapis.com/studiopanda-assets/card-flip.mp3');
     }
   }, []);
 
