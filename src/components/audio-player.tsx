@@ -7,72 +7,84 @@ import { Music4, VolumeX } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 interface AudioContextType {
-  setTrack: (src: string | null) => void;
+  setTrack: (src: string) => void;
+  trackMap: Map<string, string>;
 }
 
 const AudioContext = createContext<AudioContextType | null>(null);
 
-export function AudioProvider({ 
-    children,
-    defaultSrc 
-}: { 
-    children: React.ReactNode,
-    defaultSrc: string,
-}) {
+export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState<string | null>(defaultSrc);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pathname = usePathname();
+  
+  // A map to store the track for each path
+  const trackMap = useMemo(() => new Map<string, string>(), []);
+  
+  // The currently playing track's source
+  const [currentTrack, setCurrentTrack] = useState<string | null>(null);
 
   // Initialize Audio on the client side.
   useEffect(() => {
     if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.loop = true;
+      const audio = new Audio();
+      audio.loop = true;
+      audioRef.current = audio;
     }
   }, []);
 
-  // Effect to manage the audio source and play state
+  // Effect to decide which track to play based on the current path
+  useEffect(() => {
+    // The homepage track is the default
+    const trackForPath = trackMap.get(pathname) ?? trackMap.get('/') ?? null;
+    setCurrentTrack(trackForPath);
+  }, [pathname, trackMap]);
+  
+  // Effect to manage the audio element itself
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Determine the correct track to play.
-    // On the homepage ('/'), always use the default.
-    // On other pages, use the track set by PageSpecificAudio.
-    const trackToPlay = pathname === '/' ? defaultSrc : currentTrack;
-
-    if (trackToPlay) {
-      // Check if the source needs to be changed
-      const currentSrc = audio.src ? new URL(audio.src).pathname : '';
-      const newSrc = new URL(trackToPlay, window.location.origin).pathname;
-
-      if (currentSrc !== newSrc) {
-        audio.src = trackToPlay;
-        // If it was playing before the source change, play the new track.
-        if (isPlaying) {
-          audio.play().catch(error => console.error("Audio play failed on src change:", error));
-        }
+    const playAudio = () => {
+      if (isPlaying && audio.paused && audio.src) {
+        audio.play().catch(e => console.error("Audio play failed:", e));
       }
+    };
+    
+    if (currentTrack && audio.src !== new URL(currentTrack, window.location.origin).href) {
+        audio.src = currentTrack;
+        playAudio();
+    } else if (!currentTrack) {
+        audio.pause();
+        audio.removeAttribute('src');
     }
 
-    // Handle manual play/pause toggle
     if (isPlaying && audio.paused && audio.src) {
-      audio.play().catch(e => console.error("Audio play failed on toggle:", e));
+        playAudio();
     } else if (!isPlaying && !audio.paused) {
       audio.pause();
     }
-  }, [isPlaying, currentTrack, defaultSrc, pathname]);
+
+  }, [isPlaying, currentTrack]);
 
   const togglePlayPause = () => {
     setIsPlaying(prev => !prev);
   };
   
   const contextValue = useMemo(() => ({
-    setTrack: (src: string | null) => {
-      setCurrentTrack(src);
-    }
-  }), []);
+    setTrack: (src: string) => {
+      // For the homepage, we set a default track.
+      if (!trackMap.has('/')) {
+        trackMap.set('/', src);
+      }
+    },
+    trackMap,
+  }), [trackMap]);
+
+  // Set the default track for the homepage
+  useEffect(() => {
+    contextValue.trackMap.set('/', '/music/arcade-birthday.mp3');
+  }, [contextValue.trackMap]);
 
   return (
     <AudioContext.Provider value={contextValue}>
@@ -94,19 +106,17 @@ export function useAudio() {
     return context;
 }
 
-// This component's only job is to tell the provider which track to play.
+// This component's only job is to tell the provider which track to play for a given path.
 export function PageSpecificAudio({ src }: { src: string | null }) {
-    const { setTrack } = useAudio();
+    const { trackMap } = useAudio();
+    const pathname = usePathname();
 
     useEffect(() => {
-        // On mount, set the track for this page
-        setTrack(src);
-
-        // On unmount (when navigating away), tell the provider to fall back to default.
-        return () => {
-            setTrack(null);
-        }
-    }, [src, setTrack]);
+      if (src) {
+        trackMap.set(pathname, src);
+      }
+        // No cleanup needed, we want the track map to persist
+    }, [src, pathname, trackMap]);
 
     return null; // This component does not render anything.
 }

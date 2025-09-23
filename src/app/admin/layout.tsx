@@ -9,7 +9,7 @@ export default function SubPageLayout({
   return (
     <>
       <HomeButton />
-      {/* Set the track for this page. The actual player is in the root layout. */}
+      {/* This component tells the main audio player which track to use. */}
       <PageSpecificAudio src="/music/arcade-birthday.mp3" />
       {children}
     </>

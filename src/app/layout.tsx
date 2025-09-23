@@ -24,7 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-background font-ui antialiased">
-        <AudioProvider defaultSrc="/music/arcade-birthday.mp3">
+        <AudioProvider>
           <div className="relative flex min-h-dvh flex-col">
             <main className="flex-1">{children}</main>
           </div>
