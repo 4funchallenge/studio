@@ -18,6 +18,14 @@ import {
 } from '@/ai/flows/personalized-level-messages';
 import { userMessages, levelMessages as mockLevelMessages } from '@/lib/mock-data';
 
+// In a real app, this would come from a database.
+const mockWishes = [
+    { author: 'Visitor #1', message: 'Happy Birthday Afnan! Have a wonderful day!' },
+    { author: 'Visitor #2', message: 'Wishing you all the best on your special day!' },
+    { author: 'Afnan\'s Fan', message: 'You rock! Happy Birthday!' },
+];
+
+
 interface LevelCompleteDialogProps {
   level: number;
   isOpen: boolean;
@@ -43,18 +51,17 @@ export const LevelCompleteDialog = ({
         setError(null);
         setResult(null);
         try {
-          // The structure of mock data has changed, so we adapt it here.
-          // In a real app, this data would come from a DB in the correct format.
-          const formattedLevelMessages: LevelMessage[] = mockLevelMessages.map(msg => ({
-            message: msg.message,
-            imageUrl: msg.imageUrl,
-            audioUrl: msg.audioUrl,
+          // Combine wishes and level messages into a single array for the AI
+          const wishesAsLevelMessages: LevelMessage[] = mockWishes.map(wish => ({
+              message: `From ${wish.author}: "${wish.message}"`,
           }));
+          
+          const combinedMessages = [...mockLevelMessages, ...wishesAsLevelMessages];
 
           const response = await generatePersonalizedMessage({
             levelCompleted: level,
-            userMessages: userMessages,
-            levelMessages: formattedLevelMessages,
+            userMessages: userMessages, // Kept for potential future use
+            levelMessages: combinedMessages,
           });
           setResult(response);
         } catch (e) {
