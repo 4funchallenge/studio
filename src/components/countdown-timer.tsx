@@ -23,8 +23,8 @@ const calculateTimeLeft = (targetDate: Date): TimeLeft | null => {
 };
 
 const TimeBox = ({ value, label }: { value: number; label: string }) => (
-  <div className="flex flex-col items-center justify-center rounded-lg bg-card p-4 md:p-6 shadow-lg min-w-[70px] md:min-w-[90px]">
-    <span className="font-headline text-4xl md:text-6xl font-bold text-primary">
+  <div className="flex flex-col items-center justify-center rounded-lg bg-card/80 backdrop-blur-sm p-4 md:p-6 shadow-lg border border-primary/20 min-w-[70px] md:min-w-[90px]">
+    <span className="font-timer text-4xl md:text-6xl font-bold text-primary drop-shadow-[0_2px_4px_rgba(236,72,153,0.5)]">
       {String(value).padStart(2, '0')}
     </span>
     <span className="mt-1 text-xs md:text-sm uppercase tracking-widest text-muted-foreground">
@@ -51,7 +51,7 @@ export function CountdownTimer({ targetDate }: { targetDate: Date }) {
   if (!timeLeft) {
     return (
       <div className="text-center">
-        <h2 className="font-headline text-4xl font-bold text-accent">The party is now!</h2>
+        <h2 className="font-arcade text-5xl font-bold text-accent drop-shadow-[0_2px_4px_rgba(168,85,247,0.5)]">The party is now!</h2>
       </div>
     );
   }
@@ -59,11 +59,11 @@ export function CountdownTimer({ targetDate }: { targetDate: Date }) {
   return (
     <div className="flex items-center justify-center gap-2 md:gap-4">
       <TimeBox value={timeLeft.days} label="Days" />
-      <span className="text-4xl text-muted-foreground animate-pulse">:</span>
+      <span className="text-4xl text-muted-foreground animate-pulse font-timer">:</span>
       <TimeBox value={timeLeft.hours} label="Hours" />
-      <span className="text-4xl text-muted-foreground animate-pulse">:</span>
+      <span className="text-4xl text-muted-foreground animate-pulse font-timer">:</span>
       <TimeBox value={timeLeft.minutes} label="Minutes" />
-      <span className="text-4xl text-muted-foreground animate-pulse">:</span>
+      <span className="text-4xl text-muted-foreground animate-pulse font-timer">:</span>
       <TimeBox value={timeLeft.seconds} label="Seconds" />
     </div>
   );

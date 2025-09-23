@@ -17,8 +17,11 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['Playfair Display', 'serif'],
+        ui: ['Inter', 'sans-serif'],
+        arcade: ['Creepster', 'system-ui'],
+        cursive: ['Dancing Script', 'cursive'],
+        handwritten: ['Satisfy', 'cursive'],
+        timer: ['Orbitron', 'monospace'],
         code: ['monospace'],
       },
       colors: {
