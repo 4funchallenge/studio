@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
-import { SiteHeader } from '@/components/site-header';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Afnan's Birthday Blast",
+  title: "Afnan's Happy Birthday",
   description: 'A special birthday celebration app for Afnan!',
 };
 
@@ -25,7 +24,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background font-ui antialiased">
         <div className="relative flex min-h-dvh flex-col">
-          <SiteHeader />
           <main className="flex-1">{children}</main>
         </div>
         <Toaster />

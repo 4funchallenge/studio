@@ -29,7 +29,7 @@ export function AudioPlayer() {
   };
 
   return (
-    <div>
+    <div className="fixed top-4 right-4 z-50">
       <audio ref={audioRef} src="/music/arcade-birthday.mp3" loop />
       <Button variant="ghost" size="icon" onClick={togglePlayPause} aria-label="Toggle music">
         {isPlaying ? (

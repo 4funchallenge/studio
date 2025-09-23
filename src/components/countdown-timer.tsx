@@ -49,11 +49,7 @@ export function CountdownTimer({ targetDate }: { targetDate: Date }) {
   }, [targetDate]);
 
   if (!timeLeft) {
-    return (
-      <div className="text-center">
-        <h2 className="font-arcade text-5xl font-bold text-accent drop-shadow-[0_2px_4px_rgba(168,85,247,0.5)]">The party is now!</h2>
-      </div>
-    );
+    return null;
   }
 
   return (
