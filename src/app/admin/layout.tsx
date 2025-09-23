@@ -1,4 +1,4 @@
-import { AudioPlayer } from '@/components/audio-player';
+import { PageSpecificAudio } from '@/components/audio-player';
 import { HomeButton } from '@/components/home-button';
 
 export default function SubPageLayout({
@@ -9,7 +9,8 @@ export default function SubPageLayout({
   return (
     <>
       <HomeButton />
-      {/* The admin page has its own complex layout, so we don't include the default player */}
+      {/* Set the track for this page. The actual player is in the root layout. */}
+      <PageSpecificAudio src="/music/arcade-birthday.mp3" />
       {children}
     </>
   );

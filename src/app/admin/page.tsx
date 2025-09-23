@@ -9,7 +9,6 @@ import { Shield, MessageSquare, Gift, Trash2, Music, Image as ImageIcon, FileAud
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { AudioPlayer } from '@/components/audio-player';
 import type { LevelMessage } from '@/ai/flows/personalized-level-messages';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -69,7 +68,6 @@ function AdminDashboard() {
 
   return (
     <>
-      <AudioPlayer src="/music/arcade-birthday.mp3" />
       <Card className="max-w-4xl mx-auto">
           <CardHeader className="text-center">
               <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit">

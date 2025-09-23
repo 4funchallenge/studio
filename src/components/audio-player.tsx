@@ -1,61 +1,105 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, createContext, useContext, useMemo } from 'react';
 import { Button } from './ui/button';
 import { Music4, VolumeX } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
-export function AudioPlayer({ src }: { src?: string }) {
+interface AudioContextType {
+  setTrack: (src: string | null) => void;
+}
+
+const AudioContext = createContext<AudioContextType | null>(null);
+
+export function AudioProvider({ 
+    children,
+    defaultSrc 
+}: { 
+    children: React.ReactNode,
+    defaultSrc: string,
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState<string | null>(defaultSrc);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // Store src in a ref to avoid re-triggering useEffect on every render
-  const srcRef = useRef(src);
-  if (srcRef.current !== src) {
-      srcRef.current = src;
-  }
 
   useEffect(() => {
-    if (!srcRef.current) return;
-    
-    // We need to initialize Audio on the client side.
+    // Initialize Audio on the client side.
     if (!audioRef.current) {
-      audioRef.current = new Audio(srcRef.current);
+      audioRef.current = new Audio(defaultSrc);
       audioRef.current.loop = true;
-    } else {
-        // If the src has changed, update the audio source
-        if(audioRef.current.src !== new URL(srcRef.current, window.location.origin).toString()) {
-            const wasPlaying = !audioRef.current.paused;
-            audioRef.current.src = srcRef.current;
-            if(wasPlaying) {
-                audioRef.current.play().catch(error => console.error("Audio play failed on src change:", error));
-            }
+    }
+  }, [defaultSrc]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (currentTrack && audio.src !== new URL(currentTrack, window.location.origin).toString()) {
+        const wasPlaying = !audio.paused;
+        audio.src = currentTrack;
+        if(wasPlaying) {
+            audio.play().catch(error => console.error("Audio play failed on src change:", error));
         }
     }
-  }, [srcRef, isPlaying]); // Depend on isPlaying to re-evaluate when user tries to play
+
+    if (isPlaying && audio.paused) {
+        audio.play().catch(e => console.error("Audio play failed:", e));
+    } else if (!isPlaying && !audio.paused) {
+        audio.pause();
+    }
+  }, [isPlaying, currentTrack]);
 
   const togglePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        // play() returns a promise which can be rejected if user hasn't interacted with page.
-        audioRef.current.play().catch(error => console.error("Audio play failed:", error));
-      }
-      setIsPlaying(!isPlaying);
-    }
+    setIsPlaying(prev => !prev);
   };
-
-  if (!src) return null;
+  
+  const contextValue = useMemo(() => ({
+    setTrack: (src: string | null) => {
+      // If null, revert to default. If a new track, set it.
+      setCurrentTrack(src || defaultSrc);
+    }
+  }), [defaultSrc]);
 
   return (
-    <div className="fixed top-4 right-4 z-50">
-      <Button variant="outline" size="icon" onClick={togglePlayPause} aria-label="Toggle music">
-        {isPlaying ? (
-          <VolumeX className="h-5 w-5" />
-        ) : (
-          <Music4 className="h-5 w-5" />
-        )}
-      </Button>
-    </div>
+    <AudioContext.Provider value={contextValue}>
+        {children}
+        <div className="fixed top-4 right-4 z-50">
+            <Button variant="outline" size="icon" onClick={togglePlayPause} aria-label="Toggle music">
+                {isPlaying ? (
+                <VolumeX className="h-5 w-5" />
+                ) : (
+                <Music4 className="h-5 w-5" />
+                )}
+            </Button>
+        </div>
+    </AudioContext.Provider>
   );
+}
+
+export function useAudio() {
+    const context = useContext(AudioContext);
+    if (!context) {
+        throw new Error('useAudio must be used within an AudioProvider');
+    }
+    return context;
+}
+
+// This component now just sets the track for its page context
+export function PageSpecificAudio({ src }: { src: string | null }) {
+    const { setTrack } = useAudio();
+    const pathname = usePathname();
+
+    useEffect(() => {
+        setTrack(src);
+
+        // When component unmounts (page changes), revert to default
+        return () => {
+            // A small timeout helps prevent race conditions between pages
+            setTimeout(() => {
+                setTrack(null);
+            }, 10);
+        }
+    }, [src, setTrack, pathname]);
+
+    return null; // This component does not render anything
 }
