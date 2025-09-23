@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Shield, MessageSquare, Gift, Trash2, Music, Image as ImageIcon, FileAudio, Link as LinkIcon } from 'lucide-react';
+import { Shield, MessageSquare, Gift, Trash2, Music, Image as ImageIcon, FileAudio, Link as LinkIcon, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -108,19 +108,19 @@ function AdminDashboard() {
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <div className="space-y-2">
                                         <Label htmlFor="level-image-url">Image URL</Label>
-                                         <div className="relative">
-                                            <Input id="level-image-url" name="level-image-url" type="text" placeholder="Paste image URL here..." className="pl-10" />
-                                            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                         <div className="flex gap-2">
+                                            <Input id="level-image-url" name="level-image-url" type="text" placeholder="Paste image URL here..." />
+                                            <Button variant="outline" size="icon" disabled><Upload className="h-4 w-4" /></Button>
                                          </div>
-                                         <p className="text-xs text-muted-foreground">Upload an image to a hosting service (e.g., Imgur) and paste the URL here.</p>
+                                         <p className="text-xs text-muted-foreground">For now, please host images and paste the URL. Direct uploads require Firebase Storage integration.</p>
                                      </div>
                                       <div className="space-y-2">
                                         <Label htmlFor="level-audio-url">Audio URL</Label>
-                                          <div className="relative">
-                                            <Input id="level-audio-url" name="level-audio-url" type="text" placeholder="Paste audio URL here..." className="pl-10" />
-                                            <FileAudio className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                         <div className="flex gap-2">
+                                            <Input id="level-audio-url" name="level-audio-url" type="text" placeholder="Paste audio URL here..." />
+                                            <Button variant="outline" size="icon" disabled><Upload className="h-4 w-4" /></Button>
                                           </div>
-                                          <p className="text-xs text-muted-foreground">Upload audio to a hosting service and paste the URL here.</p>
+                                          <p className="text-xs text-muted-foreground">For now, please host audio and paste the URL. Direct uploads require Firebase Storage integration.</p>
                                      </div>
                                  </div>
                                   <Button type="submit">Add Message</Button>
