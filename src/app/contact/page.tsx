@@ -16,12 +16,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Image as ImageIcon } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
+import { addContactMessage } from '@/lib/firebase/firestore';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   message: z.string().min(10, 'Message must be at least 10 characters.'),
-  image: z.any().optional(),
 });
 
 export default function ContactPage() {
@@ -34,14 +34,24 @@ export default function ContactPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // In a real app, you would handle the form submission, e.g., send to a server.
-    console.log(values);
-    toast({
-      title: 'Message Sent! ✨',
-      description: "Thanks for getting in touch. We'll get back to you soon!",
-    });
-    form.reset();
+  const { isSubmitting } = form.formState;
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await addContactMessage(values);
+      toast({
+        title: 'Message Sent! ✨',
+        description: "Thanks for getting in touch. We'll get back to you soon!",
+      });
+      form.reset();
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Submission Failed',
+        description: 'Could not send your message. Please try again.',
+      });
+    }
   }
 
   return (
@@ -83,24 +93,17 @@ export default function ContactPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Upload an Image (Optional)</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input type="file" className="pl-12" onChange={(e) => field.onChange(e.target.files)} />
-                        <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    Send Message <Send className="ml-2 h-4 w-4" />
+                  </>
                 )}
-              />
-              <Button type="submit" className="w-full">
-                Send Message <Send className="ml-2 h-4 w-4" />
               </Button>
             </form>
           </Form>

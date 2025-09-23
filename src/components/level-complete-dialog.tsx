@@ -40,19 +40,17 @@ export const LevelCompleteDialog = ({
 
   useEffect(() => {
     if (isOpen) {
-      if (selectedMessage) {
         const getMessage = async () => {
           setIsLoading(true);
           setError(null);
           setResult(null);
           try {
-            // We pass the selected message to the AI flow.
-            // The flow will use the message's image/audio if available,
-            // or generate them if they are not.
+            // The AI flow now handles the fallback logic.
+            // We pass an array containing the selected message, or an empty array if none.
             const response = await generatePersonalizedMessage({
               levelCompleted: level,
               userMessages: [], // Not used
-              levelMessages: [selectedMessage], // Pass only the selected message
+              levelMessages: selectedMessage ? [selectedMessage] : [],
             });
             setResult(response);
           } catch (e) {
@@ -63,17 +61,15 @@ export const LevelCompleteDialog = ({
           }
         };
         getMessage();
-      } else {
-        // Handle the case where the message pool is depleted
-        setIsLoading(false);
-        setError(null);
-        setResult(null);
-      }
     }
   }, [isOpen, level, selectedMessage]);
 
   useEffect(() => {
-    if (result?.audioDataUri && audioRef.current) {
+    // If the result has a data URI, use it. Otherwise, do nothing.
+    if (result?.audioDataUri) {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
       audioRef.current.src = result.audioDataUri;
       audioRef.current.play().catch(e => console.error("Audio play failed:", e));
     }
@@ -114,22 +110,16 @@ export const LevelCompleteDialog = ({
                   width={200}
                   height={200}
                   className="rounded-lg shadow-lg"
+                  unoptimized // Required for external URLs and data URIs
                 />
               )}
               <p className="text-lg font-medium">{result.message}</p>
             </div>
           )}
-           {!isLoading && !result && !error && (
-             <div className="text-center text-muted-foreground">
-               <p>No more new messages!</p>
-               <p>But you're still doing great!</p>
-             </div>
-           )}
         </div>
         <Button onClick={handleNextLevel} className="w-full" disabled={isLoading}>
           {isLoading ? 'Loading...' : 'Continue'}
         </Button>
-        <audio ref={audioRef} />
       </DialogContent>
     </Dialog>
   );

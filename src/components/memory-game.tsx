@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { GameCard } from './game-card';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -11,16 +12,10 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { LevelCompleteDialog } from './level-complete-dialog';
 import { Confetti } from './confetti';
-import { levelMessages as mockLevelMessages } from '@/lib/mock-data';
 import type { LevelMessage } from '@/ai/flows/personalized-level-messages';
-
-// In a real app, this would come from a database.
-const mockWishes = [
-    { author: 'Visitor #1', message: 'Happy Birthday Afnan! Have a wonderful day!' },
-    { author: 'Visitor #2', message: 'Wishing you all the best on your special day!' },
-    { author: 'Afnan\'s Fan', message: 'You rock! Happy Birthday!' },
-];
-
+import { getLevelMessages, getWishes, type Wish } from '@/lib/firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const levelIcons: LucideIcon[][] = [
   [CakeSlice, Gift, PartyPopper, Camera], // Level 1: 4 pairs (8 cards)
@@ -49,19 +44,55 @@ export function MemoryGame() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<LevelMessage | null>(null);
 
-  // State for managing messages
-  const wishesAsLevelMessages: LevelMessage[] = useMemo(() => mockWishes.map(wish => ({
+  // State for managing messages from the database
+  const [allLevelMessages, setAllLevelMessages] = useState<LevelMessage[]>([]);
+  const [allWishes, setAllWishes] = useState<Wish[]>([]);
+  const [unseenMessages, setUnseenMessages] = useState<LevelMessage[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const { toast } = useToast();
+
+  const wishesAsLevelMessages = useMemo((): LevelMessage[] => allWishes.map(wish => ({
+      id: wish.id,
       message: `From ${wish.author}: "${wish.message}"`,
-  })), []);
-  
-  const [unseenLevelMessages, setUnseenLevelMessages] = useState([...mockLevelMessages]);
-  const [unseenWishes, setUnseenWishes] = useState([...wishesAsLevelMessages]);
+      // Wishes don't have images or audio by default
+  })), [allWishes]);
+
+  const fetchMessages = useCallback(async () => {
+    setIsLoadingMessages(true);
+    try {
+        const [dbLevelMessages, dbWishes] = await Promise.all([
+            getLevelMessages(),
+            getWishes()
+        ]);
+        setAllLevelMessages(dbLevelMessages);
+        setAllWishes(dbWishes);
+    } catch (error) {
+        console.error("Failed to fetch messages:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not load game messages from the database."
+        });
+    } finally {
+        setIsLoadingMessages(false);
+    }
+  }, [toast]);
+
+  // Initial fetch of all messages
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
+  // Reset unseen messages when all messages change (initial load or full reset)
+  useEffect(() => {
+      const allMessages = [...allLevelMessages, ...wishesAsLevelMessages];
+      setUnseenMessages(shuffleArray(allMessages));
+  }, [allLevelMessages, wishesAsLevelMessages]);
 
 
   const flipAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Initialize audio on the client side
     if (!flipAudioRef.current) {
       flipAudioRef.current = new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_43073b8586.mp3');
     }
@@ -74,7 +105,7 @@ export function MemoryGame() {
     }
   };
 
-  const setupLevel = (currentLevel: number) => {
+  const setupLevel = useCallback((currentLevel: number) => {
     const iconsForLevel = levelIcons[currentLevel - 1];
     const cardPairs = iconsForLevel.flatMap((Icon, i) => [
       { id: i * 2, icon: Icon, isFlipped: false, isMatched: false },
@@ -84,11 +115,11 @@ export function MemoryGame() {
     setMoves(0);
     setFlippedIndices([]);
     setIsLevelComplete(false);
-  };
+  }, []);
   
   useEffect(() => {
     setupLevel(level);
-  }, [level]);
+  }, [level, setupLevel]);
 
   useEffect(() => {
     if (flippedIndices.length === 2) {
@@ -98,7 +129,6 @@ export function MemoryGame() {
       const secondCard = cards[secondIndex];
 
       if (firstCard.icon === secondCard.icon) {
-        // It's a match
         setCards(prevCards =>
           prevCards.map((card, index) =>
             index === firstIndex || index === secondIndex ? { ...card, isMatched: true } : card
@@ -107,7 +137,6 @@ export function MemoryGame() {
         setFlippedIndices([]);
         setIsChecking(false);
       } else {
-        // Not a match
         setTimeout(() => {
           setCards(prevCards =>
             prevCards.map((card, index) =>
@@ -122,36 +151,43 @@ export function MemoryGame() {
     }
   }, [flippedIndices, cards]);
 
-  const selectNextMessage = () => {
-    const hasUnseenLevelMessages = unseenLevelMessages.length > 0;
-    const hasUnseenWishes = unseenWishes.length > 0;
-    let messageSource = '';
+  const selectNextMessage = useCallback(() => {
+      if (unseenMessages.length > 0) {
+        const hasUnseenLevelMessages = unseenMessages.some(m => allLevelMessages.find(alm => alm.id === m.id));
+        const hasUnseenWishes = unseenMessages.some(m => wishesAsLevelMessages.find(w => w.id === m.id));
 
-    if (hasUnseenLevelMessages && hasUnseenWishes) {
-      // Both have messages, use weighted random
-      messageSource = Math.random() < 0.65 ? 'level' : 'wish';
-    } else if (hasUnseenLevelMessages) {
-      messageSource = 'level';
-    } else if (hasUnseenWishes) {
-      messageSource = 'wish';
-    } else {
-      // No more unseen messages
-      setSelectedMessage(null);
-      return;
-    }
+        let messageSourcePool: LevelMessage[];
 
-    if (messageSource === 'level') {
-      const index = Math.floor(Math.random() * unseenLevelMessages.length);
-      const message = unseenLevelMessages[index];
-      setSelectedMessage(message);
-      setUnseenLevelMessages(prev => prev.filter((_, i) => i !== index));
-    } else { // 'wish'
-      const index = Math.floor(Math.random() * unseenWishes.length);
-      const message = unseenWishes[index];
-      setSelectedMessage(message);
-      setUnseenWishes(prev => prev.filter((_, i) => i !== index));
-    }
-  };
+        if (hasUnseenLevelMessages && hasUnseenWishes) {
+            const isLevelMessage = Math.random() < 0.65;
+            messageSourcePool = isLevelMessage
+                ? unseenMessages.filter(m => allLevelMessages.find(alm => alm.id === m.id))
+                : unseenMessages.filter(m => wishesAsLevelMessages.find(w => w.id === m.id));
+             if (messageSourcePool.length === 0) {
+                // Fallback to the other pool if the chosen one is empty
+                 messageSourcePool = isLevelMessage
+                    ? unseenMessages.filter(m => wishesAsLevelMessages.find(w => w.id === m.id))
+                    : unseenMessages.filter(m => allLevelMessages.find(alm => alm.id === m.id));
+            }
+        } else {
+            messageSourcePool = unseenMessages;
+        }
+        
+        if (messageSourcePool.length > 0) {
+            const index = Math.floor(Math.random() * messageSourcePool.length);
+            const message = messageSourcePool[index];
+            setSelectedMessage(message);
+            setUnseenMessages(prev => prev.filter(m => m.id !== message.id));
+        } else {
+            // This case happens if logic is complex, should ideally go to the outer else
+            setSelectedMessage(null);
+        }
+
+      } else {
+        // No more unseen messages, AI will be used as fallback
+        setSelectedMessage(null);
+      }
+  }, [unseenMessages, allLevelMessages, wishesAsLevelMessages]);
 
 
   useEffect(() => {
@@ -162,7 +198,7 @@ export function MemoryGame() {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 5000);
     }
-  }, [cards]);
+  }, [cards, selectNextMessage]);
 
   const handleCardClick = (index: number) => {
     if (isChecking || cards[index].isFlipped || flippedIndices.length === 2) {
@@ -175,16 +211,25 @@ export function MemoryGame() {
 
   const goToNextLevel = () => {
     // Reset unseen messages if all have been seen
-    if (unseenLevelMessages.length === 0 && unseenWishes.length === 0) {
-      setUnseenLevelMessages([...mockLevelMessages]);
-      setUnseenWishes([...wishesAsLevelMessages]);
+    if (unseenMessages.length === 0) {
+        const allMessages = [...allLevelMessages, ...wishesAsLevelMessages];
+        setUnseenMessages(shuffleArray(allMessages));
+        toast({ title: "Messages Reloaded!", description: "You've seen all the messages. Starting over!" });
     }
     const nextLevel = level < levelIcons.length ? level + 1 : 1; // Loop back to level 1
     setLevel(nextLevel);
   };
 
   const gridClass = level === 1 ? 'grid-cols-4' : level === 2 ? 'grid-cols-4' : 'grid-cols-4';
-  const gridLayout = level === 2 ? 'md:grid-cols-6' : 'md:grid-cols-8';
+  
+  if (isLoadingMessages) {
+    return (
+        <div className="flex flex-col items-center justify-center h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="mt-4 text-muted-foreground">Loading Game Assets...</p>
+        </div>
+    );
+  }
 
   return (
     <>

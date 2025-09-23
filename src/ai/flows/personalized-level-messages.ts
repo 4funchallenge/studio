@@ -15,6 +15,7 @@ import wav from 'wav';
 
 // Define the shape of a single level message object
 const LevelMessageSchema = z.object({
+  id: z.string().optional(),
   message: z.string(),
   imageUrl: z.string().optional(),
   audioUrl: z.string().optional(),
@@ -76,6 +77,14 @@ async function toWav(
   });
 }
 
+const fallbackPrompt = ai.definePrompt({
+    name: 'arabicFallbackPrompt',
+    input: { schema: z.object({ level: z.number() }) },
+    output: { schema: z.object({ message: z.string() }) },
+    prompt: `You are a fun and friendly game commentator. Generate a short, funny, and praising message in Arabic for a player who just completed level {{{level}}}. Be encouraging and make them laugh. Do not use quotes, just a fun comment.`,
+});
+
+
 const personalizedLevelMessagesFlow = ai.defineFlow(
   {
     name: 'personalizedLevelMessagesFlow',
@@ -83,22 +92,32 @@ const personalizedLevelMessagesFlow = ai.defineFlow(
     outputSchema: PersonalizedMessageOutputSchema,
   },
   async input => {
-    // If there are no messages, return empty strings. The frontend will handle this.
-    if (input.levelMessages.length === 0) {
-      return {
-        message: '',
-        imageDataUri: '',
-        audioDataUri: '',
-      };
+    let messageToUse = '';
+    let imageUrlToUse = '';
+    let audioUrlToUse = '';
+
+    // If there are messages from the database, use them.
+    if (input.levelMessages.length > 0) {
+        // Pick a random message from the provided level messages
+        const selectedMessage = input.levelMessages[Math.floor(Math.random() * input.levelMessages.length)];
+        messageToUse = selectedMessage.message;
+        imageUrlToUse = selectedMessage.imageUrl || '';
+        audioUrlToUse = selectedMessage.audioUrl || '';
+    } else {
+        // FALLBACK: If the message pool is empty, generate an AI message in Arabic.
+        const fallbackResult = await fallbackPrompt({ level: input.levelCompleted });
+        if (fallbackResult.output) {
+            messageToUse = fallbackResult.output.message;
+        } else {
+            // Ultimate fallback in case AI fails
+            messageToUse = `Wow, you beat level ${input.levelCompleted}! You're a superstar!`;
+        }
     }
-    
-    // Pick a random message from the provided level messages
-    const selectedMessage = input.levelMessages[Math.floor(Math.random() * input.levelMessages.length)];
     
     // Use the image and audio from the selectedMessage if provided.
     // As a fallback, generate a new image and audio only if one isn't provided.
 
-    let imageDataUri = selectedMessage.imageUrl ?? '';
+    let imageDataUri = imageUrlToUse;
     if (!imageDataUri) {
         const imageDescription = `Generate a fun, vibrant, arcade-style image celebrating the completion of a game level. The theme is a birthday party. The image should be celebratory and family-friendly.`;
         const imageResult = await ai.generate({
@@ -108,7 +127,7 @@ const personalizedLevelMessagesFlow = ai.defineFlow(
         imageDataUri = imageResult.media?.url ?? '';
     }
 
-    let audioDataUri = selectedMessage.audioUrl ?? '';
+    let audioDataUri = audioUrlToUse;
     if (!audioDataUri) {
         const audioPrompt = `Speaker1: Woo-hoo! Speaker2: Great job! Let's go to the next level!`;
         const audioResult = await ai.generate({
@@ -148,7 +167,7 @@ const personalizedLevelMessagesFlow = ai.defineFlow(
 
 
     return {
-      message: selectedMessage.message,
+      message: messageToUse,
       imageDataUri: imageDataUri,
       audioDataUri: audioDataUri,
     };

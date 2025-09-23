@@ -1,4 +1,4 @@
-import type { LevelMessage } from "@/ai/flows/personalized-level-messages";
+import type { LevelMessage } from '@/ai/flows/personalized-level-messages';
 
 export const userMessages = [
   "Happy Birthday! Hope you have a great day.",
@@ -8,6 +8,7 @@ export const userMessages = [
   "Remember that time we went to the arcade?",
 ];
 
+// This is now legacy mock data. Data will be fetched from Firestore.
 export const levelMessages: LevelMessage[] = [
   { message: "Wow, you're a natural at this!", imageUrl: 'https://picsum.photos/seed/1/200/200', audioUrl: '/music/level-complete-sfx.mp3' },
   { message: "Incredible! On to the next one.", imageUrl: 'https://picsum.photos/seed/2/200/200', audioUrl: '/music/level-complete-sfx.mp3' },
