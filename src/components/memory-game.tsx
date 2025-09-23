@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { GameCard } from './game-card';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -12,6 +11,16 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { LevelCompleteDialog } from './level-complete-dialog';
 import { Confetti } from './confetti';
+import { levelMessages as mockLevelMessages } from '@/lib/mock-data';
+import type { LevelMessage } from '@/ai/flows/personalized-level-messages';
+
+// In a real app, this would come from a database.
+const mockWishes = [
+    { author: 'Visitor #1', message: 'Happy Birthday Afnan! Have a wonderful day!' },
+    { author: 'Visitor #2', message: 'Wishing you all the best on your special day!' },
+    { author: 'Afnan\'s Fan', message: 'You rock! Happy Birthday!' },
+];
+
 
 const levelIcons: LucideIcon[][] = [
   [CakeSlice, Gift, PartyPopper, Camera], // Level 1: 4 pairs (8 cards)
@@ -38,6 +47,17 @@ export function MemoryGame() {
   const [isChecking, setIsChecking] = useState(false);
   const [isLevelComplete, setIsLevelComplete] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<LevelMessage | null>(null);
+
+  // State for managing messages
+  const wishesAsLevelMessages: LevelMessage[] = useMemo(() => mockWishes.map(wish => ({
+      message: `From ${wish.author}: "${wish.message}"`,
+  })), []);
+  
+  const [unseenLevelMessages, setUnseenLevelMessages] = useState([...mockLevelMessages]);
+  const [unseenWishes, setUnseenWishes] = useState([...wishesAsLevelMessages]);
+
+
   const flipAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -102,9 +122,42 @@ export function MemoryGame() {
     }
   }, [flippedIndices, cards]);
 
+  const selectNextMessage = () => {
+    const hasUnseenLevelMessages = unseenLevelMessages.length > 0;
+    const hasUnseenWishes = unseenWishes.length > 0;
+    let messageSource = '';
+
+    if (hasUnseenLevelMessages && hasUnseenWishes) {
+      // Both have messages, use weighted random
+      messageSource = Math.random() < 0.65 ? 'level' : 'wish';
+    } else if (hasUnseenLevelMessages) {
+      messageSource = 'level';
+    } else if (hasUnseenWishes) {
+      messageSource = 'wish';
+    } else {
+      // No more unseen messages
+      setSelectedMessage(null);
+      return;
+    }
+
+    if (messageSource === 'level') {
+      const index = Math.floor(Math.random() * unseenLevelMessages.length);
+      const message = unseenLevelMessages[index];
+      setSelectedMessage(message);
+      setUnseenLevelMessages(prev => prev.filter((_, i) => i !== index));
+    } else { // 'wish'
+      const index = Math.floor(Math.random() * unseenWishes.length);
+      const message = unseenWishes[index];
+      setSelectedMessage(message);
+      setUnseenWishes(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+
   useEffect(() => {
     const allMatched = cards.length > 0 && cards.every(c => c.isMatched);
     if (allMatched) {
+        selectNextMessage();
         setIsLevelComplete(true);
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 5000);
@@ -121,6 +174,11 @@ export function MemoryGame() {
   };
 
   const goToNextLevel = () => {
+    // Reset unseen messages if all have been seen
+    if (unseenLevelMessages.length === 0 && unseenWishes.length === 0) {
+      setUnseenLevelMessages([...mockLevelMessages]);
+      setUnseenWishes([...wishesAsLevelMessages]);
+    }
     const nextLevel = level < levelIcons.length ? level + 1 : 1; // Loop back to level 1
     setLevel(nextLevel);
   };
@@ -136,6 +194,7 @@ export function MemoryGame() {
         isOpen={isLevelComplete}
         onClose={() => setIsLevelComplete(false)}
         onNextLevel={goToNextLevel}
+        selectedMessage={selectedMessage}
       />
       <Card className="w-full max-w-4xl">
         <CardHeader>

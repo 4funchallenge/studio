@@ -16,21 +16,13 @@ import {
   type PersonalizedMessageOutput,
   type LevelMessage,
 } from '@/ai/flows/personalized-level-messages';
-import { userMessages, levelMessages as mockLevelMessages } from '@/lib/mock-data';
-
-// In a real app, this would come from a database.
-const mockWishes = [
-    { author: 'Visitor #1', message: 'Happy Birthday Afnan! Have a wonderful day!' },
-    { author: 'Visitor #2', message: 'Wishing you all the best on your special day!' },
-    { author: 'Afnan\'s Fan', message: 'You rock! Happy Birthday!' },
-];
-
 
 interface LevelCompleteDialogProps {
   level: number;
   isOpen: boolean;
   onClose: () => void;
   onNextLevel: () => void;
+  selectedMessage: LevelMessage | null;
 }
 
 export const LevelCompleteDialog = ({
@@ -38,6 +30,7 @@ export const LevelCompleteDialog = ({
   isOpen,
   onClose,
   onNextLevel,
+  selectedMessage,
 }: LevelCompleteDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PersonalizedMessageOutput | null>(null);
@@ -45,23 +38,18 @@ export const LevelCompleteDialog = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (isOpen && level > 0) {
+    if (isOpen && selectedMessage) {
       const getMessage = async () => {
         setIsLoading(true);
         setError(null);
         setResult(null);
         try {
-          // Combine wishes and level messages into a single array for the AI
-          const wishesAsLevelMessages: LevelMessage[] = mockWishes.map(wish => ({
-              message: `From ${wish.author}: "${wish.message}"`,
-          }));
-          
-          const combinedMessages = [...mockLevelMessages, ...wishesAsLevelMessages];
-
+          // We now receive the selected message as a prop,
+          // so we only need to call the AI for the image and audio.
           const response = await generatePersonalizedMessage({
             levelCompleted: level,
-            userMessages: userMessages, // Kept for potential future use
-            levelMessages: combinedMessages,
+            userMessages: [], // Not used in the current flow
+            levelMessages: [selectedMessage], // Pass only the selected message
           });
           setResult(response);
         } catch (e) {
@@ -73,8 +61,8 @@ export const LevelCompleteDialog = ({
       };
       getMessage();
     }
-  }, [isOpen, level]);
-  
+  }, [isOpen, level, selectedMessage]);
+
   useEffect(() => {
     if (result?.audioDataUri && audioRef.current) {
       audioRef.current.src = result.audioDataUri;
@@ -122,9 +110,15 @@ export const LevelCompleteDialog = ({
               <p className="text-lg font-medium">{result.message}</p>
             </div>
           )}
+           {!isLoading && !result && !error && (
+             <div className="text-center text-muted-foreground">
+               <p>No more new messages!</p>
+               <p>But you're still doing great!</p>
+             </div>
+           )}
         </div>
         <Button onClick={handleNextLevel} className="w-full" disabled={isLoading}>
-          {isLoading ? 'Loading...' : 'Continue to Next Level'}
+          {isLoading ? 'Loading...' : 'Continue'}
         </Button>
         <audio ref={audioRef} />
       </DialogContent>
