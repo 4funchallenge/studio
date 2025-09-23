@@ -110,7 +110,9 @@ function AdminDashboard() {
                                         <Label htmlFor="level-image-url">Image URL</Label>
                                          <div className="flex gap-2">
                                             <Input id="level-image-url" name="level-image-url" type="text" placeholder="Paste image URL here..." />
-                                            <Button variant="outline" size="icon" disabled><Upload className="h-4 w-4" /></Button>
+                                            <Button variant="outline" size="icon" disabled>
+                                                <Upload className="h-4 w-4" />
+                                            </Button>
                                          </div>
                                          <p className="text-xs text-muted-foreground">For now, please host images and paste the URL. Direct uploads require Firebase Storage integration.</p>
                                      </div>
@@ -118,7 +120,9 @@ function AdminDashboard() {
                                         <Label htmlFor="level-audio-url">Audio URL</Label>
                                          <div className="flex gap-2">
                                             <Input id="level-audio-url" name="level-audio-url" type="text" placeholder="Paste audio URL here..." />
-                                            <Button variant="outline" size="icon" disabled><Upload className="h-4 w-4" /></Button>
+                                            <Button variant="outline" size="icon" disabled>
+                                                <Upload className="h-4 w-4" />
+                                            </Button>
                                           </div>
                                           <p className="text-xs text-muted-foreground">For now, please host audio and paste the URL. Direct uploads require Firebase Storage integration.</p>
                                      </div>
@@ -142,7 +146,7 @@ function AdminDashboard() {
                                       </div>
                                   ))}
                              </div>
-                             <p className="text-xs text-muted-foreground mt-4">Full database integration is required to manage messages.</p>
+                             <p className="text-xs text-muted-foreground mt-4">Full database integration is required to add, edit, or delete messages.</p>
                           </CardContent>
                       </Card>
                   </TabsContent>
@@ -187,7 +191,7 @@ function AdminDashboard() {
                                       </Button>
                                   </div>
                               ))}
-                               <p className="text-xs text-muted-foreground mt-4">Full database integration is required to moderate wishes.</p>
+                               <p className="text-xs text-muted-foreground mt-4">Full database integration is required to moderate wishes. Any deletions here are temporary.</p>
                           </CardContent>
                       </Card>
                   </TabsContent>
@@ -197,7 +201,7 @@ function AdminDashboard() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2"><Music /> Audio URL Management</CardTitle>
                                 <CardDescription>
-                                    Update the URLs for background music and sound effects.
+                                    Update the URLs for background music and sound effects. These are saved temporarily.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
@@ -253,7 +257,7 @@ function AdminDashboard() {
                                         </form>
                                     </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-4">Full database integration is required to save and serve updated audio URLs.</p>
+                                <p className="text-xs text-muted-foreground mt-4">Full database integration is required to save and serve updated audio URLs permanently.</p>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -322,5 +326,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    

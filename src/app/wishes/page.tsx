@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, MessageCircle, Send, Gift } from 'lucide-react';
+import { Heart, MessageCircle, Send, Gift, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type Wish = {
   author: string;
@@ -80,6 +82,13 @@ export default function WishesPage() {
             </TabsList>
             <TabsContent value="wishes" className="mt-6">
               <div className="space-y-6">
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Note</AlertTitle>
+                  <AlertDescription>
+                    This is a demo. Your wishes are not saved permanently and will disappear on refresh. Full database integration is coming soon!
+                  </AlertDescription>
+                </Alert>
                 <form onSubmit={handleWishSubmit} className="space-y-4">
                   <Textarea
                     placeholder="Write your birthday wish here..."
@@ -114,6 +123,13 @@ export default function WishesPage() {
             </TabsContent>
             <TabsContent value="chat" className="mt-6">
                 <div className="flex flex-col h-[400px] space-y-4">
+                    <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>Note</AlertTitle>
+                        <AlertDescription>
+                            The chat is for demonstration only. Messages are not saved.
+                        </AlertDescription>
+                    </Alert>
                     <div className="flex-1 space-y-4 overflow-y-auto rounded-lg border p-4">
                         {chatMessages.map((msg, index) => (
                             <div key={index} className="flex items-start gap-3">
