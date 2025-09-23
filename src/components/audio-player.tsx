@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation';
 
 // Map paths to their respective audio tracks
 const trackMap: { [key: string]: string } = {
-  '/': 'https://storage.googleapis.com/studiopanda-assets/arcade-birthday.mp3',
+  '/': 'https://cdn.pixabay.com/audio/2023/08/26/audio_45bbec8ec1.mp3',
   '/game': 'https://storage.googleapis.com/studiopanda-assets/game-music.mp3',
   '/wishes': 'https://storage.googleapis.com/studiopanda-assets/wishes-music.mp3',
   '/contact': 'https://storage.googleapis.com/studiopanda-assets/contact-music.mp3',
