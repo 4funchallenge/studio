@@ -43,7 +43,7 @@ export function MemoryGame() {
   useEffect(() => {
     // Initialize audio on the client side
     if (!flipAudioRef.current) {
-      flipAudioRef.current = new Audio('https://storage.googleapis.com/studiopanda-assets/card-flip.mp3');
+      flipAudioRef.current = new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_43073b8586.mp3');
     }
   }, []);
 
