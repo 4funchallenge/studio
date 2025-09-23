@@ -22,6 +22,7 @@ export function AudioProvider({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<string | null>(defaultSrc);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     // Initialize Audio on the client side.
@@ -35,23 +36,29 @@ export function AudioProvider({
     const audio = audioRef.current;
     if (!audio) return;
 
-    const trackToPlay = currentTrack || defaultSrc;
+    // Use currentTrack if set, otherwise fallback to defaultSrc, especially for the homepage.
+    // pathname check ensures default is used on the home page when navigating back.
+    const trackToPlay = (pathname !== '/' && currentTrack) ? currentTrack : defaultSrc;
+    
+    // Check if we need to change the source
+    const currentSrc = audio.src ? new URL(audio.src).pathname : '';
+    const newSrc = new URL(trackToPlay, window.location.origin).pathname;
 
-    if (audio.src !== new URL(trackToPlay, window.location.origin).toString()) {
-        const wasPlaying = !audio.paused;
-        audio.src = trackToPlay;
-        // If it was playing, or the user wants it to play, play it.
-        if (wasPlaying || isPlaying) {
-            audio.play().catch(error => console.error("Audio play failed on src change:", error));
-        }
+    if (currentSrc !== newSrc) {
+      const wasPlaying = !audio.paused;
+      audio.src = trackToPlay;
+      if (wasPlaying || isPlaying) {
+        audio.play().catch(error => console.error("Audio play failed on src change:", error));
+      }
     }
-
+    
+    // Handle play/pause state
     if (isPlaying && audio.paused) {
-        audio.play().catch(e => console.error("Audio play failed:", e));
+      audio.play().catch(e => console.error("Audio play failed:", e));
     } else if (!isPlaying && !audio.paused) {
-        audio.pause();
+      audio.pause();
     }
-  }, [isPlaying, currentTrack, defaultSrc]);
+  }, [isPlaying, currentTrack, defaultSrc, pathname]);
 
   const togglePlayPause = () => {
     setIsPlaying(prev => !prev);
@@ -59,22 +66,20 @@ export function AudioProvider({
   
   const contextValue = useMemo(() => ({
     setTrack: (src: string | null) => {
+      // When a track is set, update the state.
+      // If src is null, it means we should revert to the page's default.
       setCurrentTrack(src);
     }
   }), []);
 
   return (
     <AudioContext.Provider value={contextValue}>
-        {children}
-        <div className="fixed top-4 right-4 z-50">
-            <Button variant="outline" size="icon" onClick={togglePlayPause} aria-label="Toggle music">
-                {isPlaying ? (
-                <VolumeX className="h-5 w-5" />
-                ) : (
-                <Music4 className="h-5 w-5" />
-                )}
-            </Button>
-        </div>
+      {children}
+      <div className="fixed top-4 right-4 z-50">
+        <Button variant="outline" size="icon" onClick={togglePlayPause} aria-label="Toggle music">
+          {isPlaying ? <VolumeX className="h-5 w-5" /> : <Music4 className="h-5 w-5" />}
+        </Button>
+      </div>
     </AudioContext.Provider>
   );
 }
@@ -90,20 +95,17 @@ export function useAudio() {
 // This component now just sets the track for its page context
 export function PageSpecificAudio({ src }: { src: string | null }) {
     const { setTrack } = useAudio();
-    const pathname = usePathname();
 
     useEffect(() => {
+        // On mount, set the track for this page
         setTrack(src);
 
-        // When component unmounts (page changes), revert to default
+        // On unmount (page change), reset the track to null.
+        // The provider will then fall back to the default track if on the home page.
         return () => {
-            // A small timeout helps prevent race conditions between pages
-            // This is a pragmatic fix for the fast-refresh environment
-            setTimeout(() => {
-                setTrack(null);
-            }, 50);
+            setTrack(null);
         }
-    }, [src, setTrack, pathname]);
+    }, [src, setTrack]);
 
     return null; // This component does not render anything
 }
